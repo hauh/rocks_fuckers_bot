@@ -1,0 +1,11 @@
+version: '3.9'
+
+services:
+  bot:
+    container_name: 'template_bot'
+    build: .
+    image: 'bots/template'
+    volumes:
+      - ./data:/opt/template_bot/data
+    env_file: '.env'
+    restart: always
