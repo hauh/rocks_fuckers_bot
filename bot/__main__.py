@@ -5,10 +5,11 @@ import logging
 from telegram.constants import CHAT_PRIVATE
 from telegram.error import NetworkError
 from telegram.ext import (
-	CommandHandler, DispatcherHandlerStop, Filters, Handler, MessageHandler
+	DispatcherHandlerStop, Filters, Handler, MessageHandler
 )
 
-from bot import updater, with_reply
+from bot import updater
+from bot.private import private_handlers, start
 
 
 class UpdateFilter(Handler):
@@ -26,12 +27,6 @@ class UpdateFilter(Handler):
 		raise DispatcherHandlerStop()
 
 
-@with_reply
-def start(_update, _context):
-	"""Bot starts conversation here."""
-	return "💜"
-
-
 def clean(update, _context):
 	"""Last handler to keep bot's message at the bottom of a chat."""
 	update.effective_message.delete()
@@ -47,8 +42,9 @@ def error(update, context):
 def main():
 	dispatcher = updater.dispatcher
 	dispatcher.add_handler(UpdateFilter())
-	dispatcher.add_handler(CommandHandler('start', start))
-	dispatcher.add_handler(MessageHandler(Filters.all, clean))
+	for handler in private_handlers:
+		dispatcher.add_handler(handler)
+	dispatcher.add_handler(MessageHandler(Filters.all, clean), group=999)
 	dispatcher.add_error_handler(error)
 
 	try:

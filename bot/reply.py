@@ -37,13 +37,14 @@ def with_reply(callback):
 				show_alert = bool(result[3]) if len(result) > 3 else False
 				update.callback_query.answer(answer, show_alert)
 				try:
-					recent_message.edit_text(text, reply_markup=buttons)
+					context.user_data['_recent_message'] = \
+						recent_message.edit_text(text, reply_markup=buttons)
 					return
 				except (AttributeError, TelegramError):
 					pass
 
 			# if update is from user input or if editing recent message failed
-			context.user_data['_recent_message'] =\
+			context.user_data['_recent_message'] = \
 				update.effective_chat.send_message(text, reply_markup=buttons)
 			try:
 				recent_message.delete()

@@ -21,8 +21,9 @@ try:
 		token=os.environ['TOKEN'],
 		defaults=Defaults(parse_mode=ParseMode.MARKDOWN),
 	)
-except KeyError:
-	logging.critical("'TOKEN' environment variable is required.")
+	ROCKS_FUCKERS_GROUP_ID = os.environ['GROUP_ID']
+except KeyError as e:
+	logging.critical("'%s' environment variable is required.", e.args[0])
 	sys.exit(1)
 except InvalidToken:
 	logging.critical("Invalid token.")
