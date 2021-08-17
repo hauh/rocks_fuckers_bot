@@ -61,7 +61,11 @@ class Solution(Base):
 
 
 engine = create_engine(
-	'sqlite:///fuckers.db', connect_args={'check_same_thread': False}
+	'postgresql://{user}:{password}@{host}:5432/{host}'.format(
+		user=environ['POSTGRES_USER'],
+		password=environ['POSTGRES_PASSWORD'],
+		host=environ['POSTGRES_DB'],
+	)
 )
 Base.metadata.create_all(engine)
-Session = sessionmaker(bind=engine)
+Session = sessionmaker(bind=engine, autoflush=False)

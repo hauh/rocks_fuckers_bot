@@ -1,11 +1,23 @@
 version: '3.9'
 
 services:
-  bot:
-    container_name: 'template_bot'
-    build: .
-    image: 'bots/template'
+  db:
+    image: postgres:alpine
+    container_name: rocks_fuckers_db
     volumes:
-      - ./data:/opt/template_bot/data
-    env_file: '.env'
+      - db_data:/var/lib/postgresql/data
+    env_file: .env
     restart: always
+
+  bot:
+    container_name: rocks_fuckers_bot
+    build: .
+    image: bots/rocks_fuckers_bot
+    volumes:
+      - ./data:/opt/rocks_fuckers_bot/data
+    env_file: .env
+    restart: always
+    depends_on: [db]
+
+volumes:
+  db_data: {}
