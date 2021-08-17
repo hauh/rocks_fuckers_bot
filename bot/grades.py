@@ -2,6 +2,8 @@ from enum import Enum
 
 
 class Grades(Enum):
+	"""Rock color."""
+
 	white = 1
 	yellow = 2
 	green = 3

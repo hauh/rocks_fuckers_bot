@@ -8,7 +8,8 @@ from telegram.ext import (
 	DispatcherHandlerStop, Filters, Handler, MessageHandler
 )
 
-from bot import updater
+from bot import ROCKS_FUCKERS_GROUP_ID, updater
+from bot.group import group_handlers
 from bot.private import private_handlers, start
 
 
@@ -20,7 +21,7 @@ class UpdateFilter(Handler):
 
 	def check_update(self, update):
 		if chat := update.effective_chat:
-			if chat.type == CHAT_PRIVATE:
+			if chat.type == CHAT_PRIVATE or chat.id == ROCKS_FUCKERS_GROUP_ID:
 				return None
 			logging.warning("Leaving %s '%s'.", chat.type, chat.title)
 			chat.leave()
@@ -35,16 +36,22 @@ def clean(update, _context):
 def error(update, context):
 	"""Log error and restart conversation if error is from user."""
 	logging.error("%s", f"{context.error.__class__.__name__}: {context.error}")
-	if update and update.effective_user:
+	chat = update.effective_chat
+	if update and update.effective_user and chat and chat.type == CHAT_PRIVATE:
 		start(update, context)
 
 
 def main():
 	dispatcher = updater.dispatcher
 	dispatcher.add_handler(UpdateFilter())
+
 	for handler in private_handlers:
 		dispatcher.add_handler(handler)
-	dispatcher.add_handler(MessageHandler(Filters.all, clean), group=999)
+	for handler in group_handlers:
+		dispatcher.add_handler(handler)
+
+	cleaner = MessageHandler(Filters.all & Filters.chat_type.private, clean)
+	dispatcher.add_handler(cleaner, group=999)
 	dispatcher.add_error_handler(error)
 
 	try:

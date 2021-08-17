@@ -1,15 +1,17 @@
-from telegram import InlineKeyboardButton as Button, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton as Button
+from telegram import InlineKeyboardMarkup
 from telegram.ext import (
 	CallbackQueryHandler, CommandHandler, Filters, MessageHandler
 )
 
-from bot import with_reply, ROCKS_FUCKERS_GROUP_ID
-from bot.database import Fuckers, Problems, Session, Solutions
+from bot import ROCKS_FUCKERS_GROUP_ID, with_reply
+from bot.database import Problem, Session, Solution
 from bot.grades import Grades
+from bot.util import get_fucker
 
 btn_new_solution = [Button("Решена!", callback_data='new_solution')]
 btn_my_solutions = [Button("Мои пролазы", callback_data='my_solutions')]
-btn_return = [Button("Уйти", callback_data='home')]
+btn_return = [Button("Назад", callback_data='home')]
 btn_claim = [Button("Witness me!", callback_data='claim')]
 kb_labels = [[
 	Button(Grades.label(grade), callback_data=f'grade_{grade.value}')
@@ -17,36 +19,16 @@ kb_labels = [[
 ], btn_return]
 
 
-def kb_witness_solution(fucker_id, problem_number):
-	key = f'{fucker_id}_{problem_number}'
+def kb_witness_solution(problem_id):
 	return InlineKeyboardMarkup([[
-		Button("Подтверждаю", callback_data='solution_confirmed_' + key),
-		Button("Пиздит", callback_data='solution_denied_' + key),
+		Button("Подтверждаю", callback_data=f'solution_confirm_{problem_id}'),
+		Button("Пиздит", callback_data=f'solution_reject_{problem_id}'),
 	]])
 
 
-def get_fucker(user):
-	session = Session()
-	fucker = session.query(Fuckers).get(user.id)
-	if not fucker:
-		fucker = Fuckers()
-		fucker.tg_id = user.id
-	session.add(fucker)
-	username = user.username or f'{user.first_name} {user.last_name}'.strip()
-	if fucker.username != username:
-		fucker.username = username
-		session.commit()
-	session.close()
-	return fucker
-
-
 @with_reply
-def start(update, context):
-	context.user_data.clear()
-	buttons = [btn_new_solution]
-	if get_fucker(update.effective_user).rating:
-		buttons.append(btn_my_solutions)
-	return "Решена новая проблема?", buttons
+def start(_update, _context):
+	return "Решена новая проблема?", [btn_new_solution, btn_my_solutions]
 
 
 @with_reply
@@ -61,7 +43,7 @@ def get_number(update, context):
 	if not context.user_data.pop('expecting_input', False):
 		return None
 	try:
-		if (problem_num := int(update.effective_message.text)) > Problems.MAX_NUMBER:
+		if (problem_num := int(update.effective_message.text)) > Problem.MAX_NUMBER:
 			raise ValueError
 	except (ValueError, TypeError):
 		context.user_data['expecting_input'] = True
@@ -74,7 +56,7 @@ def get_number(update, context):
 def get_grade(update, context):
 	solution = context.user_data['solution']
 	grade = int(update.callback_query.data.removeprefix('grade_'))
-	if grade > get_fucker(update.effective_user).league + 1:
+	if grade > get_fucker(update.effective_user).league + 2:
 		return "Не пизди", kb_labels
 	solution['grade'] = grade
 	return (
@@ -88,34 +70,57 @@ def claim(update, context):
 	fucker = get_fucker(update.effective_user)
 	problem_num = context.user_data['solution']['number']
 	grade = context.user_data['solution']['grade']
-	confirmation_request = context.bot.send_message(
+
+	session = Session()
+	problem = session.query(Problem).filter(
+		Problem.number == problem_num,
+		Problem.grade == grade,
+		Problem.active.is_(True)
+	).first()
+	if not problem:
+		problem = Problem()
+		problem.number = problem_num
+		problem.grade = grade
+		session.add(problem)
+		session.flush()
+
+	solution = Solution()
+	solution.problem_id = problem.id
+	solution.fucker_id = fucker.tg_id
+	session.add(solution)
+	session.commit()
+
+	problem_str = f"{Grades.label(grade)} {problem_num}"
+	context.bot.send_message(
 		ROCKS_FUCKERS_GROUP_ID,
-		f"@{fucker.username} пролез {Grades.label(grade)} {problem_num}, видел кто?",
-		reply_markup=kb_witness_solution(fucker.tg_id, problem_num)
+		f"@{fucker.username} пролез {problem_str}, видели?",
+		reply_markup=kb_witness_solution(solution.id),
+		disable_notification=True
 	)
-	confirmations = context.bot_data.setdefault('confirmations', {})
-	confirmations[confirmation_request.message_id] = confirmation_request
-	return "Ждём свидетеля", [btn_return]
+	session.close()
+	return "Ждём подтверждения " + problem_str, [btn_return]
 
 
 @with_reply
 def my_solutions(update, _context):
-	solutions = Session().query(Solutions) \
-		.filter(Solutions.fucker == update.effective_user.id) \
-		.order_by(Solutions.ascent.desc()).all()
 	return '\n'.join(
-		f'{Grades.label(solution.grade)} {solution.number} {solution.ascent}'
-		for solution in solutions
-	), [btn_return]
+		f"{Grades.label(problem_grade)} {problem_number} {date_solved}"
+		for problem_grade, problem_number, date_solved in Session()
+		.query(Problem.grade, Problem.number, Solution.date_solved)
+		.filter(
+			Solution.fucker_id == update.effective_user.id,
+			Solution.problem_id == Problem.id,
+			Solution.confirmed
+		).order_by(Solution.date_solved).limit(50)
+	) or "Пиздуй лазать", [btn_return]
 
 
 private_handlers = (
-	CommandHandler('start', start),
+	CommandHandler('start', start, Filters.chat_type.private),
 	CallbackQueryHandler(start, pattern=r'^home$'),
 	CallbackQueryHandler(new_solution, pattern=r'^new_solution$'),
-	MessageHandler(Filters.text, get_number),
+	MessageHandler(Filters.chat_type.private & Filters.text, get_number),
 	CallbackQueryHandler(get_grade, pattern=r'^grade_'),
 	CallbackQueryHandler(claim, pattern=r'^claim$'),
-
 	CallbackQueryHandler(my_solutions, pattern=r'^my_solutions$')
 )

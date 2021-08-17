@@ -1,4 +1,4 @@
-"""Template Bot package."""
+"""Rocks Fuckers Bot package."""
 
 import logging
 import os
@@ -21,7 +21,7 @@ try:
 		token=os.environ['TOKEN'],
 		defaults=Defaults(parse_mode=ParseMode.MARKDOWN),
 	)
-	ROCKS_FUCKERS_GROUP_ID = os.environ['GROUP_ID']
+	ROCKS_FUCKERS_GROUP_ID = int(os.environ['GROUP_ID'])
 except KeyError as e:
 	logging.critical("'%s' environment variable is required.", e.args[0])
 	sys.exit(1)
