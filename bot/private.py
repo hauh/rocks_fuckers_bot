@@ -93,12 +93,11 @@ def claim(update, context):
 	problem_str = f"{Grades.label(grade)} {problem_num}"
 	context.bot.send_message(
 		ROCKS_FUCKERS_GROUP_ID,
-		f"@{fucker.username} пролез {problem_str}, видели?",
-		reply_markup=kb_witness_solution(solution.id),
+		f"@{fucker.username} fucked {problem_str}",
 		disable_notification=True
 	)
 	session.close()
-	return "Ждём подтверждения " + problem_str, [btn_return]
+	return "Принято", [btn_return]
 
 
 @with_reply
@@ -110,7 +109,6 @@ def my_solutions(update, _context):
 		.filter(
 			Solution.fucker_id == update.effective_user.id,
 			Solution.problem_id == Problem.id,
-			Solution.confirmed
 		).order_by(Solution.date_solved).limit(50)
 	) or "Пиздуй лазать", [btn_return]
 
