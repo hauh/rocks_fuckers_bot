@@ -3,6 +3,8 @@ from datetime import date, timedelta
 from telegram.error import TelegramError
 from telegram.ext import CallbackQueryHandler, CommandHandler
 
+from sqlalchemy import func
+
 from bot.database import Fucker, Problem, Session, Solution
 from bot.grades import Grades
 
@@ -10,34 +12,23 @@ from bot.grades import Grades
 def get_results(start_date=None):
 	session = Session()
 	query = session.query(
-		Fucker, Solution, Problem
+		Fucker.username, Problem.grade, func.count(Solution.id)
 	).filter(
-		Solution.fucker_id == Fucker.tg_id,
-		Solution.problem_id == Problem.id,
-	)
+		Fucker.tg_id == Solution.fucker_id,
+		Problem.id == Solution.problem_id
+	).group_by(Fucker.username, Problem.grade)
 	if start_date:
-		query = query.filter(Solution.date_solved > start_date)
+		query = query.filter(Solution.date_solved >= start_date)
 	results = {}
-	for fucker, _, problem in query:
-		fucker_results = results.setdefault(
-			fucker.username, {
-				Grades.black.value: 0,
-				Grades.red.value: 0,
-				Grades.blue.value: 0,
-				Grades.green.value: 0,
-				Grades.yellow.value: 0,
-				Grades.white.value: 0
-			}
-		)
-		fucker_results[problem.grade] += 1
+	for username, grade, count in query:
+		results.setdefault(username, {})[grade] = count
 	formatted = []
 	for username, fucker_results in results.items():
 		score_row = ', '.join([
-			f"{Grades.label(grade)}x{score}"
-			for grade, score in fucker_results.items() if score
+			f"{Grades.label(grade.value)}x{fucker_results[grade.value]}"
+			for grade in Grades if grade.value in fucker_results
 		])
-		if score_row:
-			formatted.append(f"@{username}: {score_row}")
+		formatted.append(f"@{username}: {score_row}")
 	return '\n'.join(formatted) or "Пиздуйте лазать"
 
 
