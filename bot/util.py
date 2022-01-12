@@ -10,6 +10,6 @@ def get_fucker(user):
 	username = user.username or f'{user.first_name} {user.last_name}'.strip()
 	if fucker.username != username:
 		fucker.username = username
-    session.commit()
-    session.close()
-    return fucker
+	session.commit()
+	session.close()
+	return fucker
