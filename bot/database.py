@@ -21,7 +21,7 @@ class Fucker(Base):
 
 	tg_id = Column(BigInteger, primary_key=True, autoincrement=False)
 	username = Column(String, nullable=False)
-	league = Column(Integer, nullable=False, default=Grades.yellow.value)
+	league = Column(Integer, nullable=False, default=Grades.white.value)
 	rating = Column(Integer, nullable=False, default=0)
 
 
@@ -68,4 +68,4 @@ engine = create_engine(
 	)
 )
 Base.metadata.create_all(engine)
-Session = sessionmaker(bind=engine, autoflush=False)
+Session = sessionmaker(bind=engine, autoflush=True)
