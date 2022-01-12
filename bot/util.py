@@ -1,6 +1,7 @@
 from bot.database import Fucker, Session
 
-
+# Я не эксперт, но весьма вероятно, лагать он начинает из-за непротухающих сессий, которые спаунятся при каждом вводе трассы
+# Что отъебнет, если поставить expire_on_commit=True ?
 def get_fucker(user):
 	session = Session(expire_on_commit=False)
 	fucker = session.query(Fucker).get(user.id)
