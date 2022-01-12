@@ -29,6 +29,8 @@ def get_results(start_date=None):
 			for grade in Grades if grade.value in fucker_results
 		])
 		formatted.append(f"@{username}: {score_row}")
+    session.commit()
+    session.close()
 	return '\n'.join(formatted) or "Пиздуйте лазать"
 
 
