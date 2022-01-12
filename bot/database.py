@@ -68,4 +68,4 @@ engine = create_engine(
 	)
 )
 Base.metadata.create_all(engine)
-Session = sessionmaker(bind=engine, autoflush=True)
+Session = sessionmaker(bind=engine, autoflush=True, autocommit=True)
