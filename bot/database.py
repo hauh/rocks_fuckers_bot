@@ -21,7 +21,7 @@ class Fucker(Base):
 
 	tg_id = Column(BigInteger, primary_key=True, autoincrement=False)
 	username = Column(String, nullable=False)
-	league = Column(Integer, nullable=False, default=Grades.white.value)
+	league = Column(Integer, nullable=False, default=Grades.yellow.value)
 	rating = Column(Integer, nullable=False, default=0)
 
 
