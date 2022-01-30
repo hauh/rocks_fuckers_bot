@@ -72,7 +72,7 @@ def claim(update, context):
 	problem_num = context.user_data['solution']['number']
 	grade = context.user_data['solution']['grade']
 
-	session = Session.object_session(fucker)
+	session = Session()
 	problem = session.query(Problem).filter(
 		Problem.number == problem_num,
 		Problem.grade == grade,
