@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   db:
-    image: postgres:13.5-alpine
+    image: postgres:alpine
     container_name: rocks_fuckers_db
     volumes:
       - db_data:/var/lib/postgresql/data
