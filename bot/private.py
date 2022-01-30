@@ -60,7 +60,6 @@ def get_grade(update, context):
 	if grade > fucker.league + 3:
 		return "Не пизди", kb_labels
 	solution['grade'] = grade
-	Session.object_session(fucker).close()
 	return (
 		f"{Grades.label(grade)} {solution['number']} — верно?",
 		[btn_claim, btn_return]
@@ -73,7 +72,7 @@ def claim(update, context):
 	problem_num = context.user_data['solution']['number']
 	grade = context.user_data['solution']['grade']
 
-	session = Session()
+	session = Session.object_session(fucker)
 	problem = session.query(Problem).filter(
 		Problem.number == problem_num,
 		Problem.grade == grade,
