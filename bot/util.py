@@ -11,5 +11,4 @@ def get_fucker(user):
 	if fucker.username != username:
 		fucker.username = username
 	session.commit()
-	session.close()
 	return fucker

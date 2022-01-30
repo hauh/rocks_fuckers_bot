@@ -56,9 +56,11 @@ def get_number(update, context):
 def get_grade(update, context):
 	solution = context.user_data['solution']
 	grade = int(update.callback_query.data.removeprefix('grade_'))
-	if grade > get_fucker(update.effective_user).league + 3:
+	fucker = get_fucker(update.effective_user)
+	if grade > fucker.league + 3:
 		return "Не пизди", kb_labels
 	solution['grade'] = grade
+	Session.object_session(fucker).close()
 	return (
 		f"{Grades.label(grade)} {solution['number']} — верно?",
 		[btn_claim, btn_return]
