@@ -1,7 +1,7 @@
 from bot.database import Fucker, Session
 
 def get_fucker(user):
-	session = Session(expire_on_commit=True)
+	session = Session(expire_on_commit=False)
 	fucker = session.query(Fucker).get(user.id)
 	if not fucker:
 		fucker = Fucker()
